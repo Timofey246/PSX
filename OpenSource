@@ -47,73 +47,6 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		end)
 	end
 
-	local DefaultSettings = {}
-
-	getgenv().Settings = {
-		AutoLoad = false,
-		OctupleEggs = false,
-		TripleEggs = false,
-		SelectedEgg = "",
-		AppEggName = "",
-		Hatching = false,
-		SearchingAnEgg = false,
-		AnEggFounded = false,
-		FarmAreas = {},
-		AutoFarmSentPetCD = 0.125,
-		AutoFarmCD = 0,
-		CollectOrbs = false,
-		CollectLootbags = false,
-		SentAllPets = false,
-		FarmMode = "Highest Coin Multiplier",
-		SecondFarmMode = "Highest Hitpoint",
-		FarmTP = false,
-		Farming = false,
-		MakingCD = 0,
-		MakingGolden = false,
-		GoldenAmount = 6,
-		GoldenHardcore = false,
-		GoldenHardcoreAmount = 10,
-		GoldenShiny = false,
-		MakingRainbow = false,
-		RainbowAmount = 6,
-		RainbowHardcore = false,
-		RainbowHardcoreAmount = 10,
-		RainbowShiny = false,
-		MakingDM = false,
-		DMAmount = 6,
-		DMHardcore = false,
-		DMHardcoreAmount = 8,
-		DMShiny = false,
-		ClaimingDM = false,
-		Fusing = false,
-		FuseAmount = 3,
-		FuseHardcore = false,
-		FuseShiny = false,
-		ExcludedCoins = {},
-		FPS = 60,
-		STracker = false,
-		STrackerUPDT = 60,
-		FarmHop = false,
-	}
-
-	for k,v in getgenv().Settings do
-		table.insert(DefaultSettings, {k=v})
-	end
-
-	local plrfile = game.Players.LocalPlayer.Name
-	local function SaveSettings()
-		local JSON
-		local HttpService = game:service('HttpService')
-		JSON = HttpService:JSONEncode(getgenv().Settings)
-		writefile('MyPSX'.." "..plrfile..'.txt',JSON)
-	end
-	local function LoadSettings()
-		local HttpService = game:service('HttpService')
-		if isfile('MyPSX'.." "..plrfile..'.txt') then
-			getgenv().Settings = HttpService:JSONDecode(readfile('MyPSX'.." "..plrfile..'.txt'))
-		end
-	end
-
 	local ChangingVariables = {
 		OctupleEggs = false,
 		TripleEggs = false,
@@ -1409,60 +1342,6 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		end
 	end)
 
-	local Tab = Window:NewTab("Save/Load")
-	local Section = Tab:NewSection("Save/Load")
-
-	Section:NewButton("Save Settings", "Save all settings of this GUI", function()
-		for k in getgenv().Settings do
-			getgenv().Settings[k] = ChangingVariables[k]
-		end
-		SaveSettings()
-	end)
-	Section:NewToggle("Auto Load Settings", "Auto Load Settings of this GUI", function(state)
-		if state then
-			ChangingVariables.AutoLoad = true
-		else
-			ChangingVariables.AutoLoad = false
-		end
-	end)
-
-	local function StartLoad()
-		for k, v in getgenv().Settings do
-			ChangingVariables[k] = v
-		end
-		local ars = ""
-		for i, v in ChangingVariables.FarmAreas do
-			ars = ars..v..", "
-		end
-		local ars = ""
-		for i, v in ChangingVariables.ExcludedCoins do
-			ars = ars..v..", "
-		end
-		AreasLabel:UpdateLabel("Excluded coins: "..ars)
-		AreasLabel:UpdateLabel("Choosed areas: "..ars)
-		spawn(StartFuse)
-		spawn(ClaimDM)
-		spawn(StartDM)
-		spawn(StartRainbow)
-		spawn(StartGolden)
-		spawn(AutoCollectOrbs)
-		spawn(AutoCollectLootbags)
-		spawn(AutoFarm)
-		spawn(SetFps)
-		spawn(StatsTracker)
-	end
-
-	Section:NewButton("Load Settings", "Load all settings of this GUI", function()
-		LoadSettings()
-		StartLoad()
-	end)
-	Section:NewButton("Reset Settings", "Reset all settings of this GUI", function()
-		for k in getgenv().Settings do
-			getgenv().Settings[k] = DefaultSettings[k]
-		end
-		SaveSettings()
-	end)
-
 	local Tab = Window:NewTab("GUI")
 	local Section = Tab:NewSection("GUI")
 	Section:NewKeybind("Hide GUI", "Hide GUI", Enum.KeyCode.F, function()
@@ -1475,8 +1354,4 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
 	end)
 
-	LoadSettings()
-	if getgenv().Settings.AutoLoad == true then
-		StartLoad()
-	end
 end
