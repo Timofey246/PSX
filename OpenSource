@@ -1,0 +1,1482 @@
+if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
+	local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+	local Window = Library.CreateLib("Script made by @DevXRob. Hello, "..game.Players.LocalPlayer.Name.."!", "BloodTheme")
+
+	local Tab = Window:NewTab("Egg Hatch")
+	local Section = Tab:NewSection("Egg Hatch")
+
+
+	local Network = require(game:GetService("ReplicatedStorage").Library.Client.Network)
+	local Fire, Invoke = Network.Fire, Network.Invoke
+	while not game.Players.LocalPlayer:WaitForChild("__LOADED").Value do
+		wait()
+	end
+	local Pets = require(game:GetService("ReplicatedStorage"):WaitForChild("Library"):WaitForChild("Client"):WaitForChild("Save"))
+	while not Pets.Get().Pets do
+		wait()
+	end
+	Pets = Pets.Get().Pets
+	local CurrentWorld = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get().World
+	local CurrentDiamonds = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get().Diamonds
+	local EquippedPets = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get().PetsEquipped
+	local DMPets = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get().DarkMatterQueue
+
+	local old = hookfunction(getupvalue(Fire, 1), function(...)
+		return true
+	end)
+
+	local httprequest = (syn and syn.request) or http and http.request or http_request or (fluxus and fluxus.request) or request
+	local httpservice = game:GetService('HttpService')
+	local function serverHop()
+		local gameId = game.PlaceId
+		local servers = {}
+		local req = httprequest({Url = "https://games.roblox.com/v1/games/"..gameId.."/servers/Public?sortOrder=Desc&excludeFullGames=true&limit=100"})
+		local body = httpservice:JSONDecode(req.Body)
+		if body and body.data then
+			for i, v in next, body.data do
+				if type(v) == "table" and tonumber(v.playing) and tonumber(v.maxPlayers) and v.playing < v.maxPlayers and v.playing > v.maxPlayers/1.5 and not (v.id == game.JobId)  then
+					table.insert(servers, 1, v.id)
+				end 
+			end
+		end
+		if #servers > 0 then
+			game:GetService("TeleportService"):TeleportToPlaceInstance(gameId, servers[math.random(1, #servers)], game.Players.LocalPlayer)
+		end
+		game:GetService("TeleportService").TeleportInitFailed:Connect(function()
+			game:GetService("TeleportService"):TeleportToPlaceInstance(gameId, servers[math.random(1, #servers)], game.Players.LocalPlayer)
+		end)
+	end
+
+	local DefaultSettings = {}
+
+	getgenv().Settings = {
+		AutoLoad = false,
+		OctupleEggs = false,
+		TripleEggs = false,
+		SelectedEgg = "",
+		AppEggName = "",
+		Hatching = false,
+		SearchingAnEgg = false,
+		AnEggFounded = false,
+		FarmAreas = {},
+		AutoFarmSentPetCD = 0.125,
+		AutoFarmCD = 0,
+		CollectOrbs = false,
+		CollectLootbags = false,
+		SentAllPets = false,
+		FarmMode = "Highest Coin Multiplier",
+		SecondFarmMode = "Highest Hitpoint",
+		FarmTP = false,
+		Farming = false,
+		MakingCD = 0,
+		MakingGolden = false,
+		GoldenAmount = 6,
+		GoldenHardcore = false,
+		GoldenHardcoreAmount = 10,
+		GoldenShiny = false,
+		MakingRainbow = false,
+		RainbowAmount = 6,
+		RainbowHardcore = false,
+		RainbowHardcoreAmount = 10,
+		RainbowShiny = false,
+		MakingDM = false,
+		DMAmount = 6,
+		DMHardcore = false,
+		DMHardcoreAmount = 8,
+		DMShiny = false,
+		ClaimingDM = false,
+		Fusing = false,
+		FuseAmount = 3,
+		FuseHardcore = false,
+		FuseShiny = false,
+		ExcludedCoins = {},
+		FPS = 60,
+		STracker = false,
+		STrackerUPDT = 60,
+		FarmHop = false,
+	}
+
+	for k,v in getgenv().Settings do
+		table.insert(DefaultSettings, {k=v})
+	end
+
+	local plrfile = game.Players.LocalPlayer.Name
+	local function SaveSettings()
+		local JSON
+		local HttpService = game:service('HttpService')
+		JSON = HttpService:JSONEncode(getgenv().Settings)
+		writefile('MyPSX'.." "..plrfile..'.txt',JSON)
+	end
+	local function LoadSettings()
+		local HttpService = game:service('HttpService')
+		if isfile('MyPSX'.." "..plrfile..'.txt') then
+			getgenv().Settings = HttpService:JSONDecode(readfile('MyPSX'.." "..plrfile..'.txt'))
+		end
+	end
+
+	local ChangingVariables = {
+		OctupleEggs = false,
+		TripleEggs = false,
+		SelectedEgg = "",
+		AppEggName = "",
+		Hatching = false,
+		FarmAreas = {},
+		FarmPets = {},
+		FarmCoins = {},
+		AutoFarmSentPetCD = 0.125,
+		AutoFarmCD = 0,
+		CollectOrbs = false,
+		CollectLootbags = false,
+		SentAllPets = false,
+		FarmMode = "Highest Coin Multiplier",
+		SecondFarmMode = "Highest Hitpoint",
+		FarmTP = false,
+		Farming = false,
+		MakingCD = 0,
+		MakingGolden = false,
+		GoldenAmount = 6,
+		GoldenHardcore = false,
+		GoldenHardcoreAmount = 10,
+		GoldenShiny = false,
+		MakingRainbow = false,
+		RainbowAmount = 6,
+		RainbowHardcore = false,
+		RainbowHardcoreAmount = 10,
+		RainbowShiny = false,
+		MakingDM = false,
+		DMAmount = 6,
+		DMHardcore = false,
+		DMHardcoreAmount = 8,
+		DMShiny = false,
+		ClaimingDM = false,
+		Fusing = false,
+		FuseAmount = 3,
+		FuseHardcore = false,
+		FuseShiny = false,
+		AutoLoad = false,
+		ExcludedCoins = {},
+		FPS = 60,
+		STracker = false,
+		STrackerUPDT = 60,
+		FarmHop = false,
+	}
+	local function AutoHatch()
+		while Hatching do
+			Invoke("Buy Egg", SelectedEgg, TripleEggs, OctupleEggs)
+			wait()
+		end
+	end
+
+	Section:NewToggle("Triple Eggs", "Press it only if you gave Triple Eggs pass.", function(state)
+		if state then
+			TripleEggs = true
+		else
+			TripleEggs = false
+		end
+	end)
+
+	Section:NewToggle("Octuple eggs", "Press it only if you gave Octuple Eggs pass.", function(state)
+		if state then
+			OctupleEggs = true
+		else
+			OctupleEggs = false
+		end
+	end)
+
+	local eggs = {}
+	for i, v in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Eggs:GetChildren()) do
+		if v:IsA("Folder") then
+			table.insert(eggs, "🔥 "..v.Name)
+			for i, v in pairs(v:GetChildren()) do
+				table.insert(eggs, v.Name)
+			end
+		end
+	end
+
+	local eggslist = Section:NewDropdown("Egg", "Select an egg to open", {unpack(eggs)}, function(currentOption)
+		SelectedEgg = currentOption
+	end)
+
+	Section:NewTextBox("Name of the egg", "Print here the name of an egg", function(txt)
+		local foundedeggs = {}
+		for i, v in eggs do
+			if string.find(string.lower(v), string.lower(txt)) then
+				table.insert(foundedeggs, v)
+				SelectedEgg = v
+			end
+		end
+		eggslist:Refresh(foundedeggs)
+		if txt == "" or txt == " " then
+			eggslist:Refresh(eggs)
+		end
+	end)
+
+
+	Section:NewToggle("Hatch", "Press it to start hatching", function(state)
+		if state then
+			Hatching = true
+			spawn(AutoHatch)
+		else
+			Hatching = false
+		end
+	end)
+
+	Section:NewLabel("Open the first offered egg")
+
+	local SearchingAnEgg = false
+	local AnEggFounded = false
+	game.Players.LocalPlayer.PlayerGui.Message.Frame.Desc.Changed:Connect(function()
+		if SearchingAnEgg then
+			if string.find(game.Players.LocalPlayer.PlayerGui.Message.Frame.Desc.Text, "Buy and open a") then
+				local egg = string.gsub(game.Players.LocalPlayer.PlayerGui.Message.Frame.Desc.Text, "Buy and open a ", "")
+				for i = 1, string.len(egg) do
+					if not AnEggFounded then
+						if table.find(eggs, string.sub(egg, 1, i)) then
+							SelectedEgg = string.sub(egg, 1, i)
+							SearchingAnEgg = false
+							Hatching = true
+							spawn(AutoHatch)
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	Section:NewToggle("Hatch first egg", "Press E on the egg you wanna open", function(state)
+		if state then
+			SearchingAnEgg = true
+		else
+			Hatching = false
+			SearchingAnEgg = false
+		end
+	end)
+
+	local Tab = Window:NewTab("Autofarm")
+	local Section = Tab:NewSection("Autofarm")
+
+	local Areas = {}
+	local WorldCoins = {}
+	local FarmModes = {
+		"Highest Coin Multiplier",
+		"Highest Hitpoint",
+		"Chest",
+		"Coin",
+		"Present",
+		"Vault",
+		"Safe",
+		"Crate",
+		"Diamonds",
+		"Fruits",
+		"Pinata"
+	}
+
+	local function GetFarmPets()
+		table.clear(ChangingVariables.FarmPets)
+		for k in EquippedPets do
+			table.insert(ChangingVariables.FarmPets, k)
+		end
+	end
+
+	local function GetFarmCoins()
+		table.clear(ChangingVariables.FarmCoins)
+		local coins = Invoke("Get Coins")
+		for k in coins do
+			for i, vv in ChangingVariables.FarmAreas do
+				if coins[k].a == vv then
+					local excludedfounded = false
+					for _, vvv in ChangingVariables.ExcludedCoins do
+						if coins[k].n == vvv then
+							excludedfounded = true
+						end
+					end
+					if excludedfounded == false then
+						local coin = {
+							ID = k,
+							World = coins[k].w,
+							Area = coins[k].a,
+							Hitpoints = coins[k].h,
+							PetsFarming = coins[k].petsFarming,
+							Name = coins[k].n,
+							Boost = false,
+							BoostM = 0
+						}
+						if coins[k].b then
+							coin.Boost = true
+							coin.BoostM = coins[k].b.l[1].m
+						end
+						table.insert(ChangingVariables.FarmCoins, coin)
+						for i, vv in coin.PetsFarming do
+							if table.find(ChangingVariables.FarmPets, vv) then
+								for i, v in ChangingVariables.FarmPets do
+									if v == vv then
+										table.remove(ChangingVariables.FarmPets, i)
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	local function SentFarmPet(pet, coin)
+		Invoke("Join Coin", coin, {pet})
+		Fire("Farm Coin", coin, pet)
+	end
+
+	local function SentFarmPets(pets, coin)
+		Invoke("Join Coin", coin, pets)
+		for i, v in pets do
+			spawn(function()
+				Fire("Farm Coin", coin, v)
+			end)
+		end
+	end
+
+	local function AutoFarm()
+		while ChangingVariables.Farming do
+			GetFarmPets()
+			GetFarmCoins()
+			if #ChangingVariables.FarmPets >= 1 then
+				if ChangingVariables.SentAllPets then
+					if ChangingVariables.Farming then
+						spawn(function()
+							if not (#ChangingVariables.FarmCoins <= 0) then
+								local coin = ChangingVariables.FarmCoins[math.random(1,#ChangingVariables.FarmCoins)]
+								local coinChanged = false
+								local coinBoost = 0
+								local coinHP = 0
+								local HasRequiredCoin = false
+								if not (ChangingVariables.SecondFarmMode == "") then
+									for i, v in ChangingVariables.FarmCoins do
+										pcall(function()
+											if ChangingVariables.SecondFarmMode == "Highest Coin Multiplier" then
+												if v.Boost then
+													if v.BoostM > coinBoost then
+														coinChanged = true
+														coinBoost = v.BoostM
+														HasRequiredCoin = true
+														coin = v
+													end
+												end
+											elseif ChangingVariables.SecondFarmMode == "Highest Hitpoint" then
+												if v.Hitpoints > coinHP then
+													coinHP = v.Hitpoints
+													coin = v
+												end
+											elseif ChangingVariables.SecondFarmMode == "Fruits" then
+												if v.Name == "Pear" or v.Name == "Banana" or v.Name == "Orange" or v.Name == "Apple" or v.Name == "Pineapple" or v.Name == "Rainbow Fruit" then
+													HasRequiredCoin = true
+													coinChanged = true
+													coin = v
+												else
+													if v.Boost and not coinChanged then
+														if v.BoostM > coinBoost then
+															coinBoost = v.BoostM
+															coin = v
+														end
+													end
+												end
+											elseif string.find(v.Name, ChangingVariables.SecondFarmMode) then
+												HasRequiredCoin = true
+												coinChanged = true
+												coin = v
+											else
+												if v.Boost and not coinChanged then
+													if v.BoostM > coinBoost then
+														coinBoost = v.BoostM
+														coin = v
+													end
+												end
+											end
+											pcall(function()
+												if ChangingVariables.FarmMode == "Highest Coin Multiplier" then
+													if v.Boost then
+														if v.BoostM > coinBoost then
+															HasRequiredCoin = true
+															coinBoost = v.BoostM
+															coin = v
+														end
+													end
+												elseif ChangingVariables.SecondFarmMode == "Highest Hitpoint" then
+													if v.Hitpoints > coinHP then
+														coinHP = v.Hitpoints
+														coin = v
+													end
+												elseif ChangingVariables.FarmMode == "Fruits" then
+													if v.Name == "Pear" or v.Name == "Banana" or v.Name == "Orange" or v.Name == "Apple" or v.Name == "Pineapple" or v.Name == "Rainbow Fruit" then
+														HasRequiredCoin = true
+														coin = v
+													end
+												elseif string.find(v.Name, ChangingVariables.FarmMode) then
+													HasRequiredCoin = true
+													coin = v
+												end
+											end)
+										end)
+									end
+									if ChangingVariables.FarmHop == true and not HasRequiredCoin then
+										while #workspace["__THINGS"].Orbs:GetChildren() > 0 or #workspace["__THINGS"].Lootbags:GetChildren() > 0 do
+											wait(1)
+										end
+										serverHop()
+									end
+									spawn(function()
+										if ChangingVariables.FarmTP == true then
+											local TPZone = workspace["__MAP"].Teleports:FindFirstChild(coin.Area)
+											if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone.Position).Magnitude >= 300 then
+												game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(TPZone.Position)
+											end
+										end
+										local pets = {}
+										for i, v in pairs(ChangingVariables.FarmPets) do
+											table.insert(pets, v)
+										end
+										SentFarmPets(pets, coin.ID)
+										for i, v in ChangingVariables.FarmCoins do
+											if v == coin then
+												table.remove(ChangingVariables.FarmCoins, i)
+											end
+										end
+									end)
+								end
+							end
+						end)
+						wait(ChangingVariables.AutoFarmSentPetCD)
+					end
+				else
+					local HasRequiredCoin = false
+					for i, v in ChangingVariables.FarmPets do
+						if ChangingVariables.Farming then
+							spawn(function()
+								if not (#ChangingVariables.FarmCoins <= 0) then
+									local coin = ChangingVariables.FarmCoins[math.random(1,#ChangingVariables.FarmCoins)]
+									local coinChanged = false
+									local coinBoost = 0
+									local coinHP = 0
+									if not (ChangingVariables.SecondFarmMode == "") then
+										for i, v in ChangingVariables.FarmCoins do
+											pcall(function()
+												if ChangingVariables.SecondFarmMode == "Highest Coin Multiplier" then
+													if v.Boost then
+														if v.BoostM > coinBoost then
+															coinChanged = true
+															coinBoost = v.BoostM
+															HasRequiredCoin = true
+															coin = v
+														end
+													end
+												elseif ChangingVariables.SecondFarmMode == "Highest Hitpoint" then
+													if v.Hitpoints > coinHP then
+														coinHP = v.Hitpoints
+														coin = v
+													end
+												elseif ChangingVariables.SecondFarmMode == "Fruits" then
+													if v.Name == "Pear" or v.Name == "Banana" or v.Name == "Orange" or v.Name == "Apple" or v.Name == "Pineapple" or v.Name == "Rainbow Fruit" then
+														HasRequiredCoin = true
+														coinChanged = true
+														coin = v
+													else
+														if v.Boost and not coinChanged then
+															if v.BoostM > coinBoost then
+																coinBoost = v.BoostM
+																coin = v
+															end
+														end
+													end
+												elseif string.find(v.Name, ChangingVariables.SecondFarmMode) then
+													HasRequiredCoin = true
+													coinChanged = true
+													coin = v
+												else
+													if v.Boost and not coinChanged then
+														if v.BoostM > coinBoost then
+															coinBoost = v.BoostM
+															coin = v
+														end
+													end
+												end
+												pcall(function()
+													if ChangingVariables.FarmMode == "Highest Coin Multiplier" then
+														if v.Boost then
+															if v.BoostM > coinBoost then
+																HasRequiredCoin = true
+																coinBoost = v.BoostM
+																coin = v
+															end
+														end
+													elseif ChangingVariables.SecondFarmMode == "Highest Hitpoint" then
+														if v.Hitpoints > coinHP then
+															coinHP = v.Hitpoints
+															coin = v
+														end
+													elseif ChangingVariables.FarmMode == "Fruits" then
+														if v.Name == "Pear" or v.Name == "Banana" or v.Name == "Orange" or v.Name == "Apple" or v.Name == "Pineapple" or v.Name == "Rainbow Fruit" then
+															HasRequiredCoin = true
+															coin = v
+														end
+													elseif string.find(v.Name, ChangingVariables.FarmMode) then
+														HasRequiredCoin = true
+														coin = v
+													end
+												end)
+											end)
+										end
+										spawn(function()
+											if ChangingVariables.FarmTP == true then
+												local TPZone = workspace["__MAP"].Teleports:FindFirstChild(coin.Area)
+												if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone.Position).Magnitude >= 300 then
+													game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(TPZone.Position)
+												end
+											end
+											SentFarmPet(v, coin.ID)
+											for i, v in ChangingVariables.FarmCoins do
+												if v == coin then
+													table.remove(ChangingVariables.FarmCoins, i)
+												end
+											end
+										end)
+									end
+								end
+							end)
+							wait(ChangingVariables.AutoFarmSentPetCD)
+						end
+					end
+					if ChangingVariables.FarmHop == true and not HasRequiredCoin then
+						while #workspace["__THINGS"].Orbs:GetChildren() > 0 or #workspace["__THINGS"].Lootbags:GetChildren() > 0 do
+							wait(1)
+						end
+						serverHop()
+					end
+				end
+			end
+			wait(ChangingVariables.AutoFarmCD)
+		end
+	end
+
+	local function AutoCollectLootbags()
+		local LootBags = workspace["__THINGS"].Lootbags
+		while ChangingVariables.CollectLootbags do
+			if #LootBags:GetChildren() > 0 then
+				for i, v in pairs(LootBags:GetChildren()) do
+					Fire("Collect Lootbag", v.Name, v.Position)
+				end
+			end
+			wait(.1)
+		end
+	end
+
+	local function AutoCollectOrbs()
+		local orbs = workspace["__THINGS"].Orbs
+		while ChangingVariables.CollectOrbs do
+			if #orbs:GetChildren() > 0 then
+				local orbss = {}
+				for i, v in pairs(orbs:GetChildren()) do
+					table.insert(orbss, v.Name)
+				end
+				Fire("Claim Orbs", orbss)
+			end
+			wait(.1)
+		end
+	end
+
+	local AreasLabel = Section:NewLabel("Choosed areas:")
+
+	local AreasDropdownList
+
+	AreasDropdownList = Section:NewDropdown("Select an Area", "Click to select an area to autofarm.", {}, function(currentOption)
+		if table.find(ChangingVariables.FarmAreas, currentOption) then
+			for i,v in ChangingVariables.FarmAreas do
+				if v == currentOption then
+					table.remove(ChangingVariables.FarmAreas, i)
+				end
+			end
+		else
+			table.insert(ChangingVariables.FarmAreas, currentOption)
+		end
+		local ars = ""
+		for i, v in ChangingVariables.FarmAreas do
+			ars = ars..v..", "
+		end
+		AreasLabel:UpdateLabel("Choosed areas: "..ars)
+	end)
+
+	local function UpdateAreas()
+		table.clear(Areas)
+		for i, v in pairs(workspace:WaitForChild("__MAP").Boxes:GetChildren()) do
+			table.insert(Areas, v.Name)
+		end
+		AreasDropdownList:Refresh(Areas)
+	end
+
+	UpdateAreas()
+	Section:NewButton("Update Areas", "Click to update current areas.", function()
+		UpdateAreas()
+		for k in ChangingVariables.FarmAreas do
+			ChangingVariables.FarmAreas[k] = nil
+		end
+		AreasLabel:UpdateLabel("Choosed areas: ")
+	end)
+
+	Section:NewSlider("Sent pet cd", "Pet sending cd in ms", 1000, 0, function(s)
+		ChangingVariables.AutoFarmSentPetCD = s/1000
+	end)
+
+	Section:NewSlider("Auto Farm cd", "Auto farm cd in ms", 5000, 0, function(s)
+		ChangingVariables.AutoFarmCD = s/1000
+	end)
+
+	Section:NewToggle("Start Autofarm", "Click to start autofarm.", function(state)
+		if state then
+			ChangingVariables.Farming = true
+			spawn(AutoFarm)
+		else
+			ChangingVariables.Farming = false
+		end
+	end)
+
+	Section:NewToggle("Sent All Pets", "Click to sent all pets in autofarm.", function(state)
+		if state then
+			ChangingVariables.SentAllPets = true
+		else
+			ChangingVariables.SentAllPets = false
+		end
+	end)
+
+	Section:NewToggle("Auto Teleport", "Teleport to farm area", function(state)
+		if state then
+			ChangingVariables.FarmTP = true
+			spawn(AutoFarm)
+		else
+			ChangingVariables.FarmTP = false
+		end
+	end)
+
+
+	local AreasDropdownList = Section:NewDropdown("Select Farming Mode", "Click to select a mode to autofarm.", {unpack(FarmModes)}, function(currentOption)
+		ChangingVariables.FarmMode = currentOption
+	end)
+
+	local AreasDropdownList = Section:NewDropdown("Select Second FMode", "Click to select a second mode (not necessary).", {unpack(FarmModes)}, function(currentOption)
+		ChangingVariables.SecondFarmMode = currentOption
+	end)
+
+	local AreasLabel = Section:NewLabel("Excluded coins:")
+
+	local ExcludedCoinsDropdown
+
+	ExcludedCoinsDropdown = Section:NewDropdown("Exclude coins", "Exclude coins to farm", {}, function(currentOption)
+		if table.find(ChangingVariables.ExcludedCoins, currentOption) then
+			for i,v in ChangingVariables.ExcludedCoins do
+				if v == currentOption then
+					table.remove(ChangingVariables.ExcludedCoins, i)
+				end
+			end
+		else
+			table.insert(ChangingVariables.ExcludedCoins, currentOption)
+		end
+		local ars = ""
+		for i, v in ChangingVariables.ExcludedCoins do
+			ars = ars..v..", "
+		end
+		AreasLabel:UpdateLabel("Excluded coins: "..ars)
+	end)
+
+	local function UpdateExcludedCoins()
+		table.clear(WorldCoins)
+		CurrentWorld = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get().World
+		for _,v in game:GetService("ReplicatedStorage")["__DIRECTORY"].Coins[CurrentWorld]:GetChildren() do
+			for _,v in v:GetChildren() do
+				table.insert(WorldCoins, v.Name)
+			end
+		end
+		ExcludedCoinsDropdown:Refresh(WorldCoins)
+	end
+	UpdateExcludedCoins()
+
+	Section:NewButton("Update Coins", "Click to update coins to exclude.", function()
+		UpdateExcludedCoins()
+		for k in ChangingVariables.ExcludedCoins do
+			ChangingVariables.ExcludedCoins[k] = nil
+		end
+		AreasLabel:UpdateLabel("Excluded coins: ")
+	end)
+
+	Section:NewToggle("Auto Collect Lootbags", "Click to collect lootbags instantly.", function(state)
+		if state then
+			ChangingVariables.CollectLootbags = true
+			spawn(AutoCollectLootbags)
+		else
+			ChangingVariables.CollectLootbags = false
+		end
+	end)
+
+	Section:NewToggle("Auto Collect Orbs", "Click to collect orbs instantly.", function(state)
+		if state then
+			ChangingVariables.CollectOrbs = true
+			spawn(AutoCollectOrbs)
+		else
+			ChangingVariables.CollectOrbs = false
+		end
+	end)
+
+	Section:NewToggle("Server Hop", "if no required resources for farming, will be a hop server.", function(state)
+		if state then
+			ChangingVariables.FarmHop = true
+		else
+			ChangingVariables.FarmHop = false
+		end
+	end)
+
+
+	local Tab = Window:NewTab("Machines")
+	local Section = Tab:NewSection("Machines")
+	Section:NewSlider("Making Delay", "Making Pets Delay in ms", 5000, 0, function(s)
+		ChangingVariables.MakingCD = s/1000
+	end)
+	Section:NewLabel("Golden")
+
+	local function StartGolden()
+		local NormalPets = {}
+		for i, vv in Pets do
+			if not vv.g and not vv.r and not vv.dm then
+				if ChangingVariables.GoldenHardcore then
+					if vv.hc then
+						local isnotmyth = false
+						for i, v in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Pets:GetChildren()) do
+							if string.sub(v.Name, 1, string.len(vv.id)) == vv.id then
+								for i, v in pairs(v:GetChildren()) do
+									if v:IsA("ModuleScript") then
+										local petinfo = require(v)
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+											isnotmyth = true
+										end
+									end
+								end
+							end
+						end
+						if isnotmyth then
+							if not ChangingVariables.GoldenShiny then
+								if not vv.sh then
+									table.insert(NormalPets, {ID = vv.id, UID = vv.uid})
+								end
+							else
+								table.insert(NormalPets, {ID = vv.id, UID = vv.uid})
+							end
+						end
+					end
+				else
+					if not vv.hc then
+						local isnotmyth = false
+						for i, v in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Pets:GetChildren()) do
+							if string.sub(v.Name, 1, string.len(vv.id)) == vv.id then
+								for i, v in pairs(v:GetChildren()) do
+									if v:IsA("ModuleScript") then
+										local petinfo = require(v)
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+											isnotmyth = true
+										end
+									end
+								end
+							end
+						end
+						if isnotmyth then
+							if not ChangingVariables.GoldenShiny then
+								if not vv.sh then
+									table.insert(NormalPets, {ID = vv.id, UID = vv.uid})
+								end
+							else
+								table.insert(NormalPets, {ID = vv.id, UID = vv.uid})
+							end
+						end
+					end
+				end
+			end
+		end
+		while ChangingVariables.MakingGolden and if ChangingVariables.GoldenHardcore then #NormalPets >= ChangingVariables.GoldenHardcoreAmount else #NormalPets >= ChangingVariables.GoldenAmount do
+			local NeedPets = {}
+			local NeedPetsAmount = 10
+			local NeedPetID = NormalPets[1].ID
+			local PetsCount = #Pets
+			if ChangingVariables.GoldenHardcore then
+				NeedPetsAmount = ChangingVariables.GoldenHardcoreAmount
+			else
+				NeedPetsAmount = ChangingVariables.GoldenAmount
+			end
+			for i, v in NormalPets do
+				if v.ID == NeedPetID and #NeedPets < NeedPetsAmount then
+					table.insert(NeedPets, v.UID)
+				end
+			end
+			for i, v in NeedPets do
+				for i, vv in NormalPets do
+					if NormalPets[i].UID == v then
+						table.remove(NormalPets, i)
+					end
+				end
+			end
+			if #NeedPets == NeedPetsAmount then
+				while #Pets >= PetsCount and ChangingVariables.MakingGolden do
+					spawn(function()
+						Invoke("Use Golden Machine", NeedPets)
+					end)
+					wait()
+				end
+				wait(ChangingVariables.MakingCD)
+			end
+			wait()
+		end
+	end
+
+	local function StartRainbow()
+		local GoldenPets = {}
+		for i, vv in Pets do
+			if vv.g and not vv.r and not vv.dm then
+				if ChangingVariables.RainbowHardcore then
+					if vv.hc then
+						local isnotmyth = false
+						for i, v in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Pets:GetChildren()) do
+							if string.sub(v.Name, 1, string.len(vv.id)) == vv.id then
+								for i, v in pairs(v:GetChildren()) do
+									if v:IsA("ModuleScript") then
+										local petinfo = require(v)
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+											isnotmyth = true
+										end
+									end
+								end
+							end
+						end
+						if isnotmyth then
+							if not ChangingVariables.RainbowShiny then
+								if not vv.sh then
+									table.insert(GoldenPets, {ID = vv.id, UID = vv.uid})
+								end
+							else
+								table.insert(GoldenPets, {ID = vv.id, UID = vv.uid})
+							end
+						end
+					end
+				else
+					if not vv.hc then
+						local isnotmyth = false
+						for i, v in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Pets:GetChildren()) do
+							if string.sub(v.Name, 1, string.len(vv.id)) == vv.id then
+								for i, v in pairs(v:GetChildren()) do
+									if v:IsA("ModuleScript") then
+										local petinfo = require(v)
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+											isnotmyth = true
+										end
+									end
+								end
+							end
+						end
+						if isnotmyth then
+							if not ChangingVariables.RainbowShiny then
+								if not vv.sh then
+									table.insert(GoldenPets, {ID = vv.id, UID = vv.uid})
+								end
+							else
+								table.insert(GoldenPets, {ID = vv.id, UID = vv.uid})
+							end
+						end
+					end
+				end
+			end
+		end
+		while ChangingVariables.MakingRainbow and if ChangingVariables.RainbowHardcore then #GoldenPets >= ChangingVariables.RainbowHardcoreAmount else #GoldenPets >= ChangingVariables.RainbowAmount do
+			local NeedPets = {}
+			local NeedPetsAmount = 10
+			local NeedPetID = GoldenPets[1].ID
+			local PetsCount = #Pets
+			if ChangingVariables.RainbowHardcore then
+				NeedPetsAmount = ChangingVariables.RainbowHardcoreAmount
+			else
+				NeedPetsAmount = ChangingVariables.RainbowAmount
+			end
+			for i, v in GoldenPets do
+				if v.ID == NeedPetID and #NeedPets < NeedPetsAmount then
+					table.insert(NeedPets, v.UID)
+				end
+			end
+			for i, v in NeedPets do
+				for i, vv in GoldenPets do
+					if GoldenPets[i].UID == v then
+						table.remove(GoldenPets, i)
+					end
+				end
+			end
+			if #NeedPets == NeedPetsAmount then
+				while #Pets >= PetsCount and ChangingVariables.MakingRainbow do
+					spawn(function()
+						Invoke("Use Rainbow Machine", NeedPets)
+					end)
+					wait()
+				end
+				wait(ChangingVariables.MakingCD)
+			end
+			wait()
+		end
+	end
+
+	local function StartDM()
+		local RainbowPets = {}
+		for i, vv in Pets do
+			if not vv.g and vv.r and not vv.dm then
+				if ChangingVariables.DMHardcore then
+					if vv.hc then
+						local isnotmyth = false
+						for i, v in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Pets:GetChildren()) do
+							if string.sub(v.Name, 1, string.len(vv.id)) == vv.id then
+								for i, v in pairs(v:GetChildren()) do
+									if v:IsA("ModuleScript") then
+										local petinfo = require(v)
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+											isnotmyth = true
+										end
+									end
+								end
+							end
+						end
+						if isnotmyth then
+							if not ChangingVariables.DMShiny then
+								if not vv.sh then
+									table.insert(RainbowPets, {ID = vv.id, UID = vv.uid})
+								end
+							else
+								table.insert(RainbowPets, {ID = vv.id, UID = vv.uid})
+							end
+						end
+					end
+				else
+					if not vv.hc then
+						local isnotmyth = false
+						for i, v in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Pets:GetChildren()) do
+							if string.sub(v.Name, 1, string.len(vv.id)) == vv.id then
+								for i, v in pairs(v:GetChildren()) do
+									if v:IsA("ModuleScript") then
+										local petinfo = require(v)
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+											isnotmyth = true
+										end
+									end
+								end
+							end
+						end
+						if isnotmyth then
+							if not ChangingVariables.DMShiny then
+								if not vv.sh then
+									table.insert(RainbowPets, {ID = vv.id, UID = vv.uid})
+								end
+							else
+								table.insert(RainbowPets, {ID = vv.id, UID = vv.uid})
+							end
+						end
+					end
+				end
+			end
+		end
+		while ChangingVariables.MakingDM and if ChangingVariables.DMHardcore then #RainbowPets >= ChangingVariables.DMHardcoreAmount else #RainbowPets >= ChangingVariables.DMAmount do
+			local NeedPets = {}
+			local NeedPetsAmount = 10
+			local NeedPetID = RainbowPets[1].ID
+			local PetsCount = #Pets
+			if ChangingVariables.DMHardcore then
+				NeedPetsAmount = ChangingVariables.DMHardcoreAmount
+			else
+				NeedPetsAmount = ChangingVariables.DMAmount
+			end
+			for i, v in RainbowPets do
+				if v.ID == NeedPetID and #NeedPets < NeedPetsAmount then
+					table.insert(NeedPets, v.UID)
+				end
+			end
+			for i, v in NeedPets do
+				for i, vv in RainbowPets do
+					if RainbowPets[i].UID == v then
+						table.remove(RainbowPets, i)
+					end
+				end
+			end
+			if #NeedPets == NeedPetsAmount then
+				while #Pets >= PetsCount and ChangingVariables.MakingDM do
+					spawn(function()
+						Invoke("Convert To Dark Matter", NeedPets)
+					end)
+					wait()
+				end
+			end
+			wait()
+		end
+	end
+
+	local function ClaimDM()
+		for k in DMPets do
+			if ChangingVariables.ClaimingDM then
+				spawn(function()
+					Invoke("Redeem Dark Matter Pet", k)
+				end)
+				wait()
+			end
+		end
+	end
+
+	local function StartFuse()
+		while ChangingVariables.Fusing do
+			local FusePets = {}
+			for i, vv in Pets do
+				if ChangingVariables.FuseHardcore then
+					if not vv.hc then
+					else
+						local isnotmyth = false
+						for i, v in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Pets:GetChildren()) do
+							if string.sub(v.Name, 1, string.len(vv.id)) == vv.id then
+								for i, v in pairs(v:GetChildren()) do
+									if v:IsA("ModuleScript") then
+										local petinfo = require(v)
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" then
+											isnotmyth = true
+										end
+									end
+								end
+							end
+						end
+						if isnotmyth then
+							if not ChangingVariables.FuseShiny then
+								if not vv.sh then
+									table.insert(FusePets, {Power = vv.s, UID = vv.uid})
+								end
+							else
+								table.insert(FusePets, {Power = vv.s, UID = vv.uid})
+							end
+						end
+					end
+				else
+					local isnotmyth = false
+					for i, v in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Pets:GetChildren()) do
+						if string.sub(v.Name, 1, string.len(vv.id)) == vv.id then
+							for i, v in pairs(v:GetChildren()) do
+								if v:IsA("ModuleScript") then
+									local petinfo = require(v)
+									if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" then
+										isnotmyth = true
+									end
+								end
+							end
+						end
+					end
+					if isnotmyth then
+						if not ChangingVariables.FuseShiny then
+							if not vv.sh then
+								table.insert(FusePets, {Power = vv.s, UID = vv.uid})
+							end
+						else
+							table.insert(FusePets, {Power = vv.s, UID = vv.uid})
+						end
+					end
+				end
+			end
+			table.sort(FusePets, function(k1, k2) return k1.Power < k2.Power end)
+			while ChangingVariables.Fusing and #FusePets >= ChangingVariables.FuseAmount do
+				local NeedPets = {}
+				local NeedPetsAmount = ChangingVariables.FuseAmount
+				local PetsCount = #Pets
+				for i, v in FusePets do
+					if #NeedPets < NeedPetsAmount then
+						table.insert(NeedPets, v.UID)
+					end
+				end
+				for i, v in NeedPets do
+					for i, vv in FusePets do
+						if FusePets[i].UID == v then
+							table.remove(FusePets, i)
+						end
+					end
+				end
+				if #NeedPets == NeedPetsAmount then
+					spawn(function()
+						Invoke("Fuse Pets", NeedPets)
+					end)
+				end
+				wait()
+			end
+			wait()
+		end
+	end
+
+	Section:NewToggle("Start Golden", "Click to start making a golden pets", function(state)
+		if state then
+			ChangingVariables.MakingGolden = true
+			spawn(StartGolden)
+		else
+			ChangingVariables.MakingGolden = false
+		end
+	end)
+
+	Section:NewSlider("Amount", "Pets amount", 6, 1, function(s)
+		ChangingVariables.GoldenAmount = s
+	end)
+
+	Section:NewToggle("Use Hardcore Pets", "Click to use hardcore pets", function(state)
+		if state then
+			ChangingVariables.GoldenHardcore = true
+		else
+			ChangingVariables.GoldenHardcore = false
+		end
+	end)
+
+	Section:NewSlider("Hardcore Amount", "Hardcore pets amount", 10, 1, function(s)
+		ChangingVariables.GoldenHardcoreAmount = s
+	end)
+
+	Section:NewToggle("Use Shiny Pets", "Click to use Shiny pets", function(state)
+		if state then
+			ChangingVariables.GoldenShiny = true
+		else
+			ChangingVariables.GoldenShiny = false
+		end
+	end)
+	Section:NewLabel("Rainbow")
+
+	Section:NewToggle("Start Rainbow", "Click to start making a rainbow pets", function(state)
+		if state then
+			ChangingVariables.MakingRainbow = true
+			spawn(StartRainbow)
+		else
+			ChangingVariables.MakingRainbow = false
+		end
+	end)
+
+	Section:NewSlider("Amount", "Pets amount", 6, 1, function(s)
+		ChangingVariables.RainbowAmount = s
+	end)
+
+	Section:NewToggle("Use Hardcore Pets", "Click to use hardcore pets", function(state)
+		if state then
+			ChangingVariables.RainbowHardcore = true
+		else
+			ChangingVariables.RainbowHardcore = false
+		end
+	end)
+
+	Section:NewSlider("Hardcore Amount", "Hardcore pets amount", 10, 1, function(s)
+		ChangingVariables.RainbowHardcoreAmount = s
+	end)
+
+	Section:NewToggle("Use Shiny Pets", "Click to use Shiny pets", function(state)
+		if state then
+			ChangingVariables.RainbowShiny = true
+		else
+			ChangingVariables.RainbowShiny = false
+		end
+	end)
+
+	Section:NewLabel("Dark Matter")
+
+	Section:NewToggle("Start Dark Matter", "Click to start making a DM pets", function(state)
+		if state then
+			ChangingVariables.MakingDM = true
+			spawn(StartDM)
+		else
+			ChangingVariables.MakingDM = false
+		end
+	end)
+
+	Section:NewToggle("Start Claim Pets", "Click to start claim a DM pets", function(state)
+		if state then
+			ChangingVariables.ClaimingDM = true
+			spawn(ClaimDM)
+		else
+			ChangingVariables.ClaimingDM = false
+		end
+	end)
+
+	Section:NewSlider("Amount", "Pets amount", 6, 1, function(s)
+		ChangingVariables.DMAmount = s
+	end)
+
+	Section:NewToggle("Use Hardcore Pets", "Click to use hardcore pets", function(state)
+		if state then
+			ChangingVariables.DMHardcore = true
+		else
+			ChangingVariables.DMHardcore = false
+		end
+	end)
+
+	Section:NewSlider("Hardcore Amount", "Hardcore pets amount", 10, 1, function(s)
+		ChangingVariables.DMHardcoreAmount = s
+	end)
+
+	Section:NewToggle("Use Shiny Pets", "Click to use Shiny pets", function(state)
+		if state then
+			ChangingVariables.DMShiny = true
+		else
+			ChangingVariables.DMShiny = false
+		end
+	end)
+	Section:NewLabel("Fusing")
+	Section:NewToggle("Start Fuse", "Click to start fuse pets", function(state)
+		if state then
+			ChangingVariables.Fusing = true
+			spawn(StartFuse)
+		else
+			ChangingVariables.Fusing = false
+		end
+	end)
+	Section:NewToggle("Use Hardcore Pets", "Use Hardcore Pets", function(state)
+		if state then
+			ChangingVariables.FuseHardcore = true
+		else
+			ChangingVariables.FuseHardcore = false
+		end
+	end)
+	Section:NewToggle("Use Shiny Pets", "Use Shiny Pets", function(state)
+		if state then
+			ChangingVariables.FuseShiny = true
+		else
+			ChangingVariables.FuseShiny = false
+		end
+	end)
+	Section:NewSlider("Fuse Amount", "Fuse pets amount", 12, 3, function(s)
+		ChangingVariables.FuseAmount = s
+	end)
+
+	local Tab = Window:NewTab("Misc")
+	local Section = Tab:NewSection("Misc")
+	local function StatsTracker()
+		if ChangingVariables.STracker then
+			local lib = require(game:GetService("ReplicatedStorage").Framework.Library)
+			local Save = lib.Save.Get
+			local Commas = lib.Functions.Commas
+			local Types = {}
+			local Menus = game:GetService("Players").LocalPlayer.PlayerGui.Main.Right
+
+			for i,v in pairs(Menus:GetChildren()) do
+				if v.ClassName == "Frame" and v.Name ~= "Rank" and not string.find(v.Name, "2") then
+					table.insert(Types, v.Name)
+				end
+			end
+
+			function get(thistype)
+				if game.PlaceId == 10321372166 and string.find(string.lower(thistype), "coins") then
+					return Save().HardcoreCurrency[thistype]
+				else
+					return Save()[thistype]
+				end
+			end
+			local MyTypes = {}
+			for i,v in pairs(Menus:GetChildren()) do
+				if string.find(v.Name, "2") then
+					v:Destroy()
+				end
+			end
+
+			for i,v in pairs(Types) do
+				if not Menus:FindFirstChild(v.."2") then
+					Menus:WaitForChild(v).LayoutOrder = Menus:WaitForChild(v).LayoutOrder
+					local tempmark = Menus:WaitForChild(v):Clone()
+					tempmark.Name = tostring(tempmark.Name .. "2")
+					tempmark.Size = UDim2.new(tempmark.Size.X.Scale/1.25, tempmark.Size.X.Offset/1.25, tempmark.Size.Y.Scale/1.25, tempmark.Size.Y.Offset/1.25)
+					tempmark.Parent = Menus
+					tempmark.LayoutOrder = tempmark.LayoutOrder + 1
+					tempmark.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+					MyTypes[v] = tempmark
+				end
+			end
+
+			spawn(function() Menus:WaitForChild("Diamonds2").Add.Visible = false end)
+			for i,v in pairs(Types) do
+				spawn(function()
+					repeat task.wait() until MyTypes[v]
+					local megatable = {}
+					local imaginaryi = 1
+					local ptime = 0
+					local last = tick()
+					local now = last
+					local TICK_TIME = 0.5
+					local lastRGB = "255255255"
+					local function TweenTrackColor(R,G,B)
+						game:GetService("TweenService"):Create(MyTypes[v], TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.In, 0, false, 0),{
+							BackgroundColor3 =  Color3.fromRGB(R,G,B)
+						}):Play()
+					end
+					local RainbowTween = false
+					local RGBTrackTween = game:GetService("TweenService"):Create(MyTypes[v], TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, 0.5),{
+						BackgroundColor3 =  Color3.fromRGB(85, 0, 125)
+					})
+					while true do
+						if ptime >= TICK_TIME then
+							while ptime >= TICK_TIME do ptime = ptime - TICK_TIME end
+							local currentbal = get(v)
+							megatable[imaginaryi] = currentbal
+							local diffy = currentbal - (megatable[imaginaryi-ChangingVariables.STrackerUPDT] or megatable[1])
+							imaginaryi = imaginaryi + 1
+							if ChangingVariables.STrackerUPDT >= 60 then
+								if ChangingVariables.STrackerUPDT >= 3600 then
+									MyTypes[v].Amount.Text = tostring(Commas(diffy).." in "..tonumber(ChangingVariables.STrackerUPDT/3600).."h")
+									MyTypes[v].Amount_odometerGUIFX.Text = tostring(Commas(diffy).." in "..tonumber(ChangingVariables.STrackerUPDT/3600).."h")
+								else
+									MyTypes[v].Amount.Text = tostring(Commas(diffy).." in "..tonumber(ChangingVariables.STrackerUPDT/60).."m")
+									MyTypes[v].Amount_odometerGUIFX.Text = tostring(Commas(diffy).." in "..tonumber(ChangingVariables.STrackerUPDT/60).."m")
+								end
+							else
+								MyTypes[v].Amount.Text = tostring(Commas(diffy).." in "..ChangingVariables.STrackerUPDT.."s")
+								MyTypes[v].Amount_odometerGUIFX.Text = tostring(Commas(diffy).." in "..ChangingVariables.STrackerUPDT.."s")
+							end
+							local R = 0
+							local G = 0
+							local B = 0
+							local RGBPerMinute = {
+								{Amount=0, Color={R=0, G=0, B=0}},
+								{Amount=1000, Color={R=255, G=0, B=0}},
+								{Amount=100000, Color={R=255, G=125, B=0}},
+								{Amount=1000000, Color={R=255, G=255, B=0}},
+								{Amount=10000000, Color={R=0, G=255, B=0}},
+								{Amount=100000000, Color={R=0, G=255, B=125}},
+								{Amount=1000000000, Color={R=0, G=255, B=255}},
+								{Amount=10000000000, Color={R=0, G=0, B=255}},
+								{Amount=100000000000, Color={R=125, G=0, B=255}},
+								{Amount=500000000000, Color={R=125, G=0, B=85}},
+								{Amount=1000000000000, Color={R=255, G=255, B=255}},
+							}
+							for i,v in RGBPerMinute do
+								if diffy >= v.Amount*(ChangingVariables.STrackerUPDT/60) then
+									R = v.Color.R
+									G = v.Color.G
+									B = v.Color.B
+								end
+							end
+							if not (lastRGB == tostring(R..G..B)) then
+								if R == 255 and G == 255 and B == 255 then
+									RainbowTween = true
+									RGBTrackTween:Play()
+								else
+									if RainbowTween then
+										RainbowTween = false
+										RGBTrackTween:Cancel()
+									end
+									lastRGB = tostring(R..G..B)
+									spawn(function()
+										TweenTrackColor(R,G,B)
+									end)
+								end
+							end
+						end
+						task.wait()
+						now = tick()
+						ptime = ptime + (now - last)
+						last = now
+					end
+				end) 
+			end
+		else
+			local Menus = game:GetService("Players").LocalPlayer.PlayerGui.Main.Right
+			for i,v in pairs(Menus:GetChildren()) do
+				if string.find(v.Name, "2") then
+					v:Destroy() 
+				end
+			end
+		end
+	end
+	Section:NewToggle("Stats Tracker", "Stats Tracker", function(State)
+		ChangingVariables.STracker = State
+		StatsTracker()
+	end)
+
+	Section:NewTextBox("Tracker Time (sec)", "How long to keep info in seconds", function(txt)
+		ChangingVariables.STrackerUPDT = tonumber(txt)
+	end)
+
+	Section:NewToggle("Turn off render", "Turn off 3d rendering", function(state)
+		if state then
+			game:GetService("RunService"):Set3dRenderingEnabled(false)
+		else
+			game:GetService("RunService"):Set3dRenderingEnabled(true)
+		end
+	end)
+
+	local function SetFps()
+		setfpscap(ChangingVariables.FPS)
+	end
+
+	Section:NewTextBox("Set Fps Cap", "Set your custom framerate", function(txt)
+		if tonumber(txt) > 0 then
+			ChangingVariables.FPS = tonumber(txt)
+			SetFps()
+		end
+	end)
+
+	local Tab = Window:NewTab("Save/Load")
+	local Section = Tab:NewSection("Save/Load")
+
+	Section:NewButton("Save Settings", "Save all settings of this GUI", function()
+		for k in getgenv().Settings do
+			getgenv().Settings[k] = ChangingVariables[k]
+		end
+		SaveSettings()
+	end)
+	Section:NewToggle("Auto Load Settings", "Auto Load Settings of this GUI", function(state)
+		if state then
+			ChangingVariables.AutoLoad = true
+		else
+			ChangingVariables.AutoLoad = false
+		end
+	end)
+
+	local function StartLoad()
+		for k, v in getgenv().Settings do
+			ChangingVariables[k] = v
+		end
+		local ars = ""
+		for i, v in ChangingVariables.FarmAreas do
+			ars = ars..v..", "
+		end
+		local ars = ""
+		for i, v in ChangingVariables.ExcludedCoins do
+			ars = ars..v..", "
+		end
+		AreasLabel:UpdateLabel("Excluded coins: "..ars)
+		AreasLabel:UpdateLabel("Choosed areas: "..ars)
+		spawn(StartFuse)
+		spawn(ClaimDM)
+		spawn(StartDM)
+		spawn(StartRainbow)
+		spawn(StartGolden)
+		spawn(AutoCollectOrbs)
+		spawn(AutoCollectLootbags)
+		spawn(AutoFarm)
+		spawn(SetFps)
+		spawn(StatsTracker)
+	end
+
+	Section:NewButton("Load Settings", "Load all settings of this GUI", function()
+		LoadSettings()
+		StartLoad()
+	end)
+	Section:NewButton("Reset Settings", "Reset all settings of this GUI", function()
+		for k in getgenv().Settings do
+			getgenv().Settings[k] = DefaultSettings[k]
+		end
+		SaveSettings()
+	end)
+
+	local Tab = Window:NewTab("GUI")
+	local Section = Tab:NewSection("GUI")
+	Section:NewKeybind("Hide GUI", "Hide GUI", Enum.KeyCode.F, function()
+		Library:ToggleUI()
+	end)
+	local vu = game:GetService("VirtualUser")
+	game:GetService("Players").LocalPlayer.Idled:connect(function()
+		vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+		wait(1)
+		vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+	end)
+
+	LoadSettings()
+	if getgenv().Settings.AutoLoad == true then
+		StartLoad()
+	end
+end
