@@ -21,6 +21,10 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 	local EquippedPets = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get().PetsEquipped
 	local DMPets = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get().DarkMatterQueue
 
+	local old = hookfunction(getupvalue(Fire, 1), function(...)
+		return true
+	end)
+
 	local httprequest = (syn and syn.request) or http and http.request or http_request or (fluxus and fluxus.request) or request
 	local httpservice = game:GetService('HttpService')
 	local function serverHop()
@@ -1350,4 +1354,8 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
 	end)
 
+	LoadSettings()
+	if getgenv().Settings.AutoLoad == true then
+		StartLoad()
+	end
 end
