@@ -6,7 +6,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 	local Section = Tab:NewSection("Egg Hatch")
 
 
-	local Network = require(game:GetService("ReplicatedStorage").Library.Client.Network)
+	local Network = require(game:GetService("ReplicatedStorage"):WaitForChild("Library"):WaitForChild("Client"):WaitForChild("Network"))
 	local Fire, Invoke = Network.Fire, Network.Invoke
 	while not game.Players.LocalPlayer:WaitForChild("__LOADED").Value do
 		wait()
@@ -47,6 +47,78 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		end)
 	end
 
+	local DefaultSettings = {}
+
+	getgenv().Settings = {
+		AutoLoad = false,
+		OctupleEggs = false,
+		TripleEggs = false,
+		SelectedEgg = "",
+		AppEggName = "",
+		Hatching = false,
+		SearchingAnEgg = false,
+		AnEggFounded = false,
+		FarmAreas = {},
+		AutoFarmSentPetCD = 0.125,
+		AutoFarmCD = 0,
+		CollectOrbs = false,
+		CollectLootbags = false,
+		SentAllPets = false,
+		FarmMode = "Highest Coin Multiplier",
+		SecondFarmMode = "Highest Hitpoint",
+		FarmTP = false,
+		FarmZone = false,
+		FarmZoneDist = 30,
+		Farming = false,
+		MakingCD = 0,
+		MakingGolden = false,
+		GoldenAmount = 6,
+		GoldenHardcore = false,
+		GoldenHardcoreAmount = 10,
+		GoldenShiny = false,
+		GoldenSecrets = false,
+		MakingRainbow = false,
+		RainbowAmount = 6,
+		RainbowHardcore = false,
+		RainbowHardcoreAmount = 10,
+		RainbowShiny = false,
+		RainbowSecrets = false,
+		MakingDM = false,
+		DMAmount = 6,
+		DMHardcore = false,
+		DMHardcoreAmount = 8,
+		DMShiny = false,
+		DMSecrets = false,
+		ClaimingDM = false,
+		Fusing = false,
+		FuseAmount = 3,
+		FuseHardcore = false,
+		FuseShiny = false,
+		ExcludedCoins = {},
+		FPS = 60,
+		STracker = false,
+		STrackerUPDT = 60,
+		FarmHop = false,
+	}
+
+	for k,v in getgenv().Settings do
+		table.insert(DefaultSettings, {k=v})
+	end
+
+	local plrfile = game.Players.LocalPlayer.Name
+	local function SaveSettings()
+		local JSON
+		local HttpService = game:service('HttpService')
+		JSON = HttpService:JSONEncode(getgenv().Settings)
+		writefile('MyPSX'.." "..plrfile..'.txt',JSON)
+	end
+	local function LoadSettings()
+		local HttpService = game:service('HttpService')
+		if isfile('MyPSX'.." "..plrfile..'.txt') then
+			getgenv().Settings = HttpService:JSONDecode(readfile('MyPSX'.." "..plrfile..'.txt'))
+		end
+	end
+
 	local ChangingVariables = {
 		OctupleEggs = false,
 		TripleEggs = false,
@@ -64,6 +136,8 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		FarmMode = "Highest Coin Multiplier",
 		SecondFarmMode = "Highest Hitpoint",
 		FarmTP = false,
+		FarmZone = false,
+		FarmZoneDist = 30,
 		Farming = false,
 		MakingCD = 0,
 		MakingGolden = false,
@@ -71,16 +145,19 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		GoldenHardcore = false,
 		GoldenHardcoreAmount = 10,
 		GoldenShiny = false,
+		GoldenSecrets = false,
 		MakingRainbow = false,
 		RainbowAmount = 6,
 		RainbowHardcore = false,
 		RainbowHardcoreAmount = 10,
 		RainbowShiny = false,
+		RainbowSecrets = false,
 		MakingDM = false,
 		DMAmount = 6,
 		DMHardcore = false,
 		DMHardcoreAmount = 8,
 		DMShiny = false,
+		DMSecrets = false,
 		ClaimingDM = false,
 		Fusing = false,
 		FuseAmount = 3,
@@ -154,6 +231,20 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		end
 	end)
 
+	local pathToScript = game.Players.LocalPlayer.PlayerScripts.Scripts.Game['Open Eggs']
+	local oldFunc = getsenv(pathToScript).OpenEgg
+	local function ToggleEggAnimation(delanimation)
+		if delanimation == true then 
+			getsenv(pathToScript).OpenEgg = function() return end 
+		else
+			getsenv(pathToScript).OpenEgg = oldFunc
+		end
+	end
+
+	Section:NewToggle("Remove eggs animation", "Press it to remove eggs animations", function(state)
+		ToggleEggAnimation(state)
+	end)
+
 	Section:NewLabel("Open the first offered egg")
 
 	local SearchingAnEgg = false
@@ -214,29 +305,29 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 	local function GetFarmCoins()
 		table.clear(ChangingVariables.FarmCoins)
 		local coins = Invoke("Get Coins")
-		for k in coins do
-			for i, vv in ChangingVariables.FarmAreas do
-				if coins[k].a == vv then
+		for k,v in coins do
+			if ChangingVariables.FarmZone == true then
+				if (v.p - game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart").Position).Magnitude <= ChangingVariables.FarmZoneDist*10 then
 					local excludedfounded = false
 					for _, vvv in ChangingVariables.ExcludedCoins do
-						if coins[k].n == vvv then
+						if v.n == vvv then
 							excludedfounded = true
 						end
 					end
 					if excludedfounded == false then
 						local coin = {
 							ID = k,
-							World = coins[k].w,
-							Area = coins[k].a,
-							Hitpoints = coins[k].h,
-							PetsFarming = coins[k].petsFarming,
-							Name = coins[k].n,
+							World = v.w,
+							Area = v.a,
+							Hitpoints = v.h,
+							PetsFarming = v.petsFarming,
+							Name = v.n,
 							Boost = false,
-							BoostM = 0
+							BoostM = 0,
 						}
-						if coins[k].b then
+						if v.b then
 							coin.Boost = true
-							coin.BoostM = coins[k].b.l[1].m
+							coin.BoostM = v.b.l[1].m
 						end
 						table.insert(ChangingVariables.FarmCoins, coin)
 						for i, vv in coin.PetsFarming do
@@ -244,6 +335,43 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 								for i, v in ChangingVariables.FarmPets do
 									if v == vv then
 										table.remove(ChangingVariables.FarmPets, i)
+									end
+								end
+							end
+						end
+					end
+				end
+			else
+				for i, vv in ChangingVariables.FarmAreas do
+					if v.a == vv then
+						local excludedfounded = false
+						for _, vvv in ChangingVariables.ExcludedCoins do
+							if v.n == vvv then
+								excludedfounded = true
+							end
+						end
+						if excludedfounded == false then
+							local coin = {
+								ID = k,
+								World = v.w,
+								Area = v.a,
+								Hitpoints = v.h,
+								PetsFarming = v.petsFarming,
+								Name = v.n,
+								Boost = false,
+								BoostM = 0,
+							}
+							if v.b then
+								coin.Boost = true
+								coin.BoostM = v.b.l[1].m
+							end
+							table.insert(ChangingVariables.FarmCoins, coin)
+							for i, vv in coin.PetsFarming do
+								if table.find(ChangingVariables.FarmPets, vv) then
+									for i, v in ChangingVariables.FarmPets do
+										if v == vv then
+											table.remove(ChangingVariables.FarmPets, i)
+										end
 									end
 								end
 							end
@@ -333,7 +461,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 															coin = v
 														end
 													end
-												elseif ChangingVariables.SecondFarmMode == "Highest Hitpoint" then
+												elseif ChangingVariables.FarmMode == "Highest Hitpoint" then
 													if v.Hitpoints > coinHP then
 														coinHP = v.Hitpoints
 														coin = v
@@ -553,6 +681,20 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		AreasLabel:UpdateLabel("Choosed areas: ")
 	end)
 
+	Section:NewToggle("Farming Zone", "Farm around you", function(state)
+		if state then
+			ChangingVariables.FarmZone = true
+			AreasLabel:UpdateLabel("Choosed Farming Zone")
+		else
+			ChangingVariables.FarmZone = false
+			AreasLabel:UpdateLabel("Choosed areas: ")
+		end
+	end)
+
+	Section:NewSlider("Farming Zone Dist", "Farming Zone Distance (30 as default)", 30, 1, function(s)
+		ChangingVariables.FarmZoneDist = s
+	end)
+
 	Section:NewSlider("Sent pet cd", "Pet sending cd in ms", 1000, 0, function(s)
 		ChangingVariables.AutoFarmSentPetCD = s/1000
 	end)
@@ -581,7 +723,6 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 	Section:NewToggle("Auto Teleport", "Teleport to farm area", function(state)
 		if state then
 			ChangingVariables.FarmTP = true
-			spawn(AutoFarm)
 		else
 			ChangingVariables.FarmTP = false
 		end
@@ -596,7 +737,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		ChangingVariables.SecondFarmMode = currentOption
 	end)
 
-	local AreasLabel = Section:NewLabel("Excluded coins:")
+	local ExAreasLabel = Section:NewLabel("Excluded coins:")
 
 	local ExcludedCoinsDropdown
 
@@ -614,23 +755,26 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		for i, v in ChangingVariables.ExcludedCoins do
 			ars = ars..v..", "
 		end
-		AreasLabel:UpdateLabel("Excluded coins: "..ars)
+		ExAreasLabel:UpdateLabel("Excluded coins: "..ars)
 	end)
 
 	local function UpdateExcludedCoins()
 		table.clear(WorldCoins)
 		CurrentWorld = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get().World
-		for _,v in game:GetService("ReplicatedStorage")["__DIRECTORY"].Coins[CurrentWorld]:GetChildren() do
-			for _,v in v:GetChildren() do
-				table.insert(WorldCoins, v.Name)
+		pcall(function()
+			for _,v in game:GetService("ReplicatedStorage")["__DIRECTORY"].Coins[CurrentWorld]:GetChildren() do
+				for _,v in v:GetChildren() do
+					table.insert(WorldCoins, v.Name)
+				end
 			end
-		end
+		end)
 		ExcludedCoinsDropdown:Refresh(WorldCoins)
 	end
 	UpdateExcludedCoins()
 
 	Section:NewButton("Update Coins", "Click to update coins to exclude.", function()
 		UpdateExcludedCoins()
+		ExAreasLabel:UpdateLabel("Excluded coins: ")
 		for k in ChangingVariables.ExcludedCoins do
 			ChangingVariables.ExcludedCoins[k] = nil
 		end
@@ -683,8 +827,12 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 								for i, v in pairs(v:GetChildren()) do
 									if v:IsA("ModuleScript") then
 										local petinfo = require(v)
-										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
-											isnotmyth = true
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" or petinfo.rarity == "Secret" then
+											if ChangingVariables.GoldenSecrets then
+												isnotmyth = true
+											elseif petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+												isnotmyth = true
+											end
 										end
 									end
 								end
@@ -708,8 +856,12 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 								for i, v in pairs(v:GetChildren()) do
 									if v:IsA("ModuleScript") then
 										local petinfo = require(v)
-										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
-											isnotmyth = true
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" or petinfo.rarity == "Secret" then
+											if ChangingVariables.GoldenSecrets then
+												isnotmyth = true
+											elseif petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+												isnotmyth = true
+											end
 										end
 									end
 								end
@@ -775,8 +927,12 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 								for i, v in pairs(v:GetChildren()) do
 									if v:IsA("ModuleScript") then
 										local petinfo = require(v)
-										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
-											isnotmyth = true
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" or petinfo.rarity == "Secret" then
+											if ChangingVariables.GoldenSecrets then
+												isnotmyth = true
+											elseif petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+												isnotmyth = true
+											end
 										end
 									end
 								end
@@ -800,8 +956,12 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 								for i, v in pairs(v:GetChildren()) do
 									if v:IsA("ModuleScript") then
 										local petinfo = require(v)
-										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
-											isnotmyth = true
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" or petinfo.rarity == "Secret" then
+											if ChangingVariables.GoldenSecrets then
+												isnotmyth = true
+											elseif petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+												isnotmyth = true
+											end
 										end
 									end
 								end
@@ -867,8 +1027,12 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 								for i, v in pairs(v:GetChildren()) do
 									if v:IsA("ModuleScript") then
 										local petinfo = require(v)
-										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
-											isnotmyth = true
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" or petinfo.rarity == "Secret" then
+											if ChangingVariables.GoldenSecrets then
+												isnotmyth = true
+											elseif petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+												isnotmyth = true
+											end
 										end
 									end
 								end
@@ -892,8 +1056,12 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 								for i, v in pairs(v:GetChildren()) do
 									if v:IsA("ModuleScript") then
 										local petinfo = require(v)
-										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
-											isnotmyth = true
+										if petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" or petinfo.rarity == "Secret" then
+											if ChangingVariables.GoldenSecrets then
+												isnotmyth = true
+											elseif petinfo.rarity == "Basic" or petinfo.rarity == "Rare" or petinfo.rarity == "Epic" or petinfo.rarity == "Legendary" or petinfo.rarity == "Mythical" then
+												isnotmyth = true
+											end
 										end
 									end
 								end
@@ -1072,6 +1240,14 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 			ChangingVariables.GoldenShiny = false
 		end
 	end)
+
+	Section:NewToggle("Use Secret Pets", "Click to use Secret pets", function(state)
+		if state then
+			ChangingVariables.GoldenSecrets = true
+		else
+			ChangingVariables.GoldenSecrets = false
+		end
+	end)
 	Section:NewLabel("Rainbow")
 
 	Section:NewToggle("Start Rainbow", "Click to start making a rainbow pets", function(state)
@@ -1104,6 +1280,14 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 			ChangingVariables.RainbowShiny = true
 		else
 			ChangingVariables.RainbowShiny = false
+		end
+	end)
+
+	Section:NewToggle("Use Secret Pets", "Click to use Secret pets", function(state)
+		if state then
+			ChangingVariables.RainbowSecrets = true
+		else
+			ChangingVariables.RainbowSecrets = false
 		end
 	end)
 
@@ -1148,6 +1332,14 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 			ChangingVariables.DMShiny = true
 		else
 			ChangingVariables.DMShiny = false
+		end
+	end)
+
+	Section:NewToggle("Use Secret Pets", "Click to use Secret pets", function(state)
+		if state then
+			ChangingVariables.DMSecrets = true
+		else
+			ChangingVariables.DMSecrets = false
 		end
 	end)
 	Section:NewLabel("Fusing")
@@ -1340,6 +1532,149 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 			ChangingVariables.FPS = tonumber(txt)
 			SetFps()
 		end
+	end)
+
+	local RenamePetsName = ""
+	local RenameByEnchaments = false
+
+	local RenameTxt = Section:NewLabel('Rename all pets to ""')
+
+	Section:NewTextBox("Name to pets", "Name to pets", function(txt)
+		RenamePetsName = tostring(txt)
+		RenameTxt:UpdateLabel('Rename all pets to "'..txt..'"')
+	end)
+	
+	Section:NewToggle("Rename to pets enchantments", "Will rename to enchantment of pet", function(state)
+		if state then
+			RenameByEnchaments = true
+		else
+			RenameByEnchaments = false
+		end
+	end)
+
+	local renaming = false
+
+	Section:NewButton("Rename all pets", "Click to rename all pets", function()
+		if not renaming then
+			renaming = true
+			for i, v in Pets do
+				if not (v.nk == RenamePetsName) then
+					spawn(function()
+						RenameTxt:UpdateLabel("Pets renamed ["..i.."/"..#Pets.."]")
+						if RenameByEnchaments then
+							local endname = "Enchantment -"
+							if v.powers then
+								if v.powers[1][1] == "Best Friend" or v.powers[1][1] == "Evolved" or v.powers[1][1] == "Titanic" then
+									endname = v.powers[2][1].." "..v.powers[2][2]
+								else
+									endname = v.powers[1][1].." "..v.powers[1][2]
+								end
+							end
+							Invoke("Rename Pet", v.uid, endname)
+						else
+							Invoke("Rename Pet", v.uid, RenamePetsName)
+						end
+					end)
+					wait(1)
+				end
+			end
+			RenameTxt:UpdateLabel('Rename all pets to "'..RenamePetsName..'"')
+			renaming = false
+		end
+	end)
+
+	Section:NewButton("Rename equipped pets", "Click to rename equipped pets", function()
+		if not renaming then
+			renaming = true
+			local epc = 0
+			local i = 0
+			for _ in EquippedPets do
+				epc+=1
+			end
+			for k in EquippedPets do
+				i+=1
+				spawn(function()
+					RenameTxt:UpdateLabel("Pets renamed ["..i.."/"..epc.."]")
+					if RenameByEnchaments then
+						local endname = ""
+						for _,v in Pets do
+							if v.uid == k then
+								if v.powers then
+									if v.powers[1][1] == "Best Friend" or v.powers[1][1] == "Evolved" or v.powers[1][1] == "Titanic" then
+										endname = v.powers[2][1].." "..v.powers[2][2]
+									else
+										endname = v.powers[1][1].." "..v.powers[1][2]
+									end
+								end
+							end
+						end
+						Invoke("Rename Pet", k, endname)
+					else
+						Invoke("Rename Pet", k, RenamePetsName)
+					end
+				end)
+				wait(1)
+			end
+			RenameTxt:UpdateLabel('Rename all pets to "'..RenamePetsName..'"')
+			renaming = false
+		end
+	end)
+
+	local Tab = Window:NewTab("Save/Load")
+	local Section = Tab:NewSection("Save/Load")
+
+	Section:NewButton("Save Settings", "Save all settings of this GUI", function()
+		for k in getgenv().Settings do
+			getgenv().Settings[k] = ChangingVariables[k]
+		end
+		SaveSettings()
+	end)
+	Section:NewToggle("Auto Load Settings", "Auto Load Settings of this GUI", function(state)
+		if state then
+			ChangingVariables.AutoLoad = true
+		else
+			ChangingVariables.AutoLoad = false
+		end
+	end)
+
+	local function StartLoad()
+		for k, v in getgenv().Settings do
+			ChangingVariables[k] = v
+		end
+		local ars = ""
+		for i, v in ChangingVariables.FarmAreas do
+			ars = ars..v..", "
+		end
+		AreasLabel:UpdateLabel("Choosed areas: "..ars)
+		local ars = ""
+		for i, v in ChangingVariables.ExcludedCoins do
+			ars = ars..v..", "
+		end
+		ExAreasLabel:UpdateLabel("Excluded coins: "..ars)
+		if ChangingVariables.FarmZone == true then
+			AreasLabel:UpdateLabel("Choosed Farming Zone Mode")
+		end
+		spawn(StartFuse)
+		spawn(ClaimDM)
+		spawn(StartDM)
+		spawn(StartRainbow)
+		spawn(StartGolden)
+		spawn(AutoCollectOrbs)
+		spawn(AutoCollectLootbags)
+		spawn(AutoFarm)
+		spawn(SetFps)
+		spawn(StatsTracker)
+	end
+
+	Section:NewButton("Load Settings", "Load all settings of this GUI", function()
+		LoadSettings()
+		StartLoad()
+	end)
+	Section:NewButton("Reset Settings", "Reset all settings of this GUI", function()
+		for k in getgenv().Settings do
+			getgenv().Settings[k] = DefaultSettings[k]
+		end
+		SaveSettings()
 	end)
 
 	local Tab = Window:NewTab("GUI")
