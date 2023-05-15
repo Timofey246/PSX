@@ -171,25 +171,25 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		FarmHop = false,
 	}
 	local function AutoHatch()
-		while Hatching do
-			Invoke("Buy Egg", SelectedEgg, TripleEggs, OctupleEggs)
+		while ChangingVariables.Hatching do
+			Invoke("Buy Egg", ChangingVariables.SelectedEgg, ChangingVariables.TripleEggs, ChangingVariables.OctupleEggs)
 			wait()
 		end
 	end
 
 	Section:NewToggle("Triple Eggs", "Press it only if you gave Triple Eggs pass.", function(state)
 		if state then
-			TripleEggs = true
+			ChangingVariables.TripleEggs = true
 		else
-			TripleEggs = false
+			ChangingVariables.TripleEggs = false
 		end
 	end)
 
 	Section:NewToggle("Octuple eggs", "Press it only if you gave Octuple Eggs pass.", function(state)
 		if state then
-			OctupleEggs = true
+			ChangingVariables.OctupleEggs = true
 		else
-			OctupleEggs = false
+			ChangingVariables.OctupleEggs = false
 		end
 	end)
 
@@ -204,7 +204,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 	end
 
 	local eggslist = Section:NewDropdown("Egg", "Select an egg to open", {unpack(eggs)}, function(currentOption)
-		SelectedEgg = currentOption
+		ChangingVariables.SelectedEgg = currentOption
 	end)
 
 	Section:NewTextBox("Name of the egg", "Print here the name of an egg", function(txt)
@@ -212,7 +212,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		for i, v in eggs do
 			if string.find(string.lower(v), string.lower(txt)) then
 				table.insert(foundedeggs, v)
-				SelectedEgg = v
+				ChangingVariables.SelectedEgg = v
 			end
 		end
 		eggslist:Refresh(foundedeggs)
@@ -224,10 +224,10 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 
 	Section:NewToggle("Hatch", "Press it to start hatching", function(state)
 		if state then
-			Hatching = true
+			ChangingVariables.Hatching = true
 			spawn(AutoHatch)
 		else
-			Hatching = false
+			ChangingVariables.Hatching = false
 		end
 	end)
 
@@ -256,9 +256,9 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 				for i = 1, string.len(egg) do
 					if not AnEggFounded then
 						if table.find(eggs, string.sub(egg, 1, i)) then
-							SelectedEgg = string.sub(egg, 1, i)
+							ChangingVariables.SelectedEgg = string.sub(egg, 1, i)
 							SearchingAnEgg = false
-							Hatching = true
+							ChangingVariables.Hatching = true
 							spawn(AutoHatch)
 						end
 					end
@@ -271,7 +271,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		if state then
 			SearchingAnEgg = true
 		else
-			Hatching = false
+			ChangingVariables.Hatching = false
 			SearchingAnEgg = false
 		end
 	end)
@@ -1543,7 +1543,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		RenamePetsName = tostring(txt)
 		RenameTxt:UpdateLabel('Rename all pets to "'..txt..'"')
 	end)
-	
+
 	Section:NewToggle("Rename to pets enchantments", "Will rename to enchantment of pet", function(state)
 		if state then
 			RenameByEnchaments = true
@@ -1654,6 +1654,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		if ChangingVariables.FarmZone == true then
 			AreasLabel:UpdateLabel("Choosed Farming Zone Mode")
 		end
+		spawn(AutoHatch)
 		spawn(StartFuse)
 		spawn(ClaimDM)
 		spawn(StartDM)
