@@ -324,6 +324,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 							Name = v.n,
 							Boost = false,
 							BoostM = 0,
+							Position = v.p
 						}
 						if v.b then
 							coin.Boost = true
@@ -360,6 +361,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 								Name = v.n,
 								Boost = false,
 								BoostM = 0,
+								Position = v.p
 							}
 							if v.b then
 								coin.Boost = true
@@ -486,9 +488,9 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 									end
 									spawn(function()
 										if ChangingVariables.FarmTP == true then
-											local TPZone = workspace["__MAP"].Teleports:FindFirstChild(coin.Area)
-											if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone.Position).Magnitude >= 300 then
-												game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(TPZone.Position)
+											local TPZone = coin.Position
+											if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone).Magnitude >= 300 then
+												game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(TPZone + Vector3.new(0,50,0))
 											end
 										end
 										local pets = {}
@@ -587,9 +589,9 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 										end
 										spawn(function()
 											if ChangingVariables.FarmTP == true then
-												local TPZone = workspace["__MAP"].Teleports:FindFirstChild(coin.Area)
-												if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone.Position).Magnitude >= 300 then
-													game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(TPZone.Position)
+												local TPZone = coin.Position
+												if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone).Magnitude >= 300 then
+													game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(TPZone + Vector3.new(0,50,0))
 												end
 											end
 											SentFarmPet(v, coin.ID)
@@ -720,14 +722,13 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		end
 	end)
 
-	Section:NewToggle("Auto Teleport", "Teleport to farm area", function(state)
+	Section:NewToggle("TP To Farm Areas", "Teleport to farm area", function(state)
 		if state then
 			ChangingVariables.FarmTP = true
 		else
 			ChangingVariables.FarmTP = false
 		end
 	end)
-
 
 	local AreasDropdownList = Section:NewDropdown("Select Farming Mode", "Click to select a mode to autofarm.", {unpack(FarmModes)}, function(currentOption)
 		ChangingVariables.FarmMode = currentOption
