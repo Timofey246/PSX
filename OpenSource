@@ -722,7 +722,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		end
 	end)
 
-	Section:NewToggle("TP To Farm Areas", "Teleport to farm area", function(state)
+	Section:NewToggle("TP To Farm Coins", "Teleport to farm coins when it need", function(state)
 		if state then
 			ChangingVariables.FarmTP = true
 		else
