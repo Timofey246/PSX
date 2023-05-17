@@ -1621,6 +1621,26 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 		end
 	end)
 	
+	Section:NewLabel("Boosts")
+	local BAmount = 1
+	local SBoost = "Triple Coins"
+	Section:NewSlider("Amount to use", "Amount of boosts to use per once", 1000, 0, function(s)
+		BAmount = s
+	end)
+	
+	Section:NewDropdown("Select a boost", "Select a boost to use", {"Triple Coins", "Triple Damage", "Super Lucky", "Ultra Lucky"}, function(currentOption)
+		SBoost = currentOption
+	end)
+	
+	Section:NewButton("Use Boosts", "Click to use boosts", function()
+		for i = 1,BAmount do
+			spawn(function()
+				Fire("Activate Boost", SBoost)
+			end)
+		end
+	end)
+
+	
 	local Tab = Window:NewTab("Trading Plaza")
 	local Section = Tab:NewSection("Booth")
 	local DetailPetsTypes1 = {}
@@ -1796,7 +1816,6 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 					end
 				end
 			end
-			print("Invoking")
 			Invoke("Add Trading Booth Pet", NeedPets)
 		end
 		local MyBooth = nil
