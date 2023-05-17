@@ -1,4 +1,4 @@
-if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
+if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 7722306047 or game.PlaceId == 12610002282 or game.PlaceId == 11725212117 then
 	local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 	local Window = Library.CreateLib("Script made by @DevXRob. Hello, "..game.Players.LocalPlayer.Name.."!", "BloodTheme")
 
@@ -489,7 +489,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 									spawn(function()
 										if ChangingVariables.FarmTP == true then
 											local TPZone = coin.Position
-											if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone).Magnitude >= 300 then
+											if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone).Magnitude >= 350 then
 												game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(TPZone + Vector3.new(0,50,0))
 											end
 										end
@@ -590,7 +590,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 										spawn(function()
 											if ChangingVariables.FarmTP == true then
 												local TPZone = coin.Position
-												if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone).Magnitude >= 300 then
+												if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - TPZone).Magnitude >= 350 then
 													game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(TPZone + Vector3.new(0,50,0))
 												end
 											end
@@ -693,7 +693,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		end
 	end)
 
-	Section:NewSlider("Farming Zone Dist", "Farming Zone Distance (30 as default)", 30, 1, function(s)
+	Section:NewSlider("Farming Zone Dist", "Farming Zone Distance (30 as default)", 35, 1, function(s)
 		ChangingVariables.FarmZoneDist = s
 	end)
 
@@ -1620,6 +1620,223 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 			renaming = false
 		end
 	end)
+	
+	local Tab = Window:NewTab("Trading Plaza")
+	local Section = Tab:NewSection("Booth")
+	local DetailPetsTypes1 = {}
+	local DetailPetsTypes2 = {}
+	local SellPetInfo = {}
+	local BoothPetSelection = Section:NewDropdown("Select a pet to sell", "Select a pet to sell on booth", {}, function(currentOption)
+		for i,v in DetailPetsTypes1 do
+			if v == currentOption then
+				SellPetInfo = DetailPetsTypes2[i]
+			end
+		end
+	end)
+	
+	local function UpdatePetsTypes()
+		local PetsTypes = {}
+		DetailPetsTypes1 = {}
+		DetailPetsTypes2 = {}
+		for _,v in Pets do
+			if v.nk then
+				local PetInfo = {
+					Golden = v.g or false,
+					Rainbow = v.r or false,
+					DarkMatter = v.dm or false,
+					Shiny = v.sh or false,
+					Hardcore = v.hc or false,
+					ID = v.id,
+					Name = ""
+				}
+				for i, vv in pairs(game:GetService("ReplicatedStorage")["__DIRECTORY"].Pets:GetChildren()) do
+					if string.sub(vv.Name, 1, string.len(v.id)) == v.id then
+						for i, v in pairs(vv:GetChildren()) do
+							if v:IsA("ModuleScript") then
+								PetInfo.Name = require(v).name
+							end
+						end
+					end
+				end
+				local pi = ""
+				if PetInfo.Hardcore then
+					pi = "HC "
+				end
+				if PetInfo.Shiny then
+					pi = pi.."Shiny "
+				end
+				if PetInfo.Golden then
+					pi = pi.."Golden "
+				elseif PetInfo.Rainbow then
+					pi = pi.."Rainbow "
+				elseif PetInfo.DarkMatter then
+					pi = pi.."DM "
+				end
+				pi = pi..PetInfo.Name
+				if not table.find(PetsTypes, pi) then
+					table.insert(PetsTypes, pi)
+					table.insert(DetailPetsTypes1, pi)
+					table.insert(DetailPetsTypes2, PetInfo)
+				end
+			end
+		end
+		BoothPetSelection:Refresh(PetsTypes)
+	end
+	UpdatePetsTypes()
+	
+	Section:NewButton("Update Dropdown Below", "Update Pets selection to sell", function()
+		UpdatePetsTypes()
+	end)
+	local BoothPetsAmount = 12
+	local BoothPetsPrice = 10000000000000
+	Section:NewSlider("Amount", "Amount to put on the stand", 12, 1, function(s)
+		BoothPetsAmount = s
+	end)
+	Section:NewTextBox("Price", "Price for each pet", function(txt)
+		BoothPetsPrice = tonumber(txt)
+	end)
+
+	local selling = false
+	local function StartSelling()
+		local MyPetsCount = 0
+		local function AddPets()
+			local NeedPets = {}
+			for i, v in Pets do
+				if #NeedPets+MyPetsCount < BoothPetsAmount then
+					if v.id == SellPetInfo.ID then
+						if SellPetInfo.Hardcore then
+							if v.hc == true then
+								if SellPetInfo.Shiny then
+									if v.sh == true then
+										if SellPetInfo.DarkMatter then
+											if v.dm then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										elseif SellPetInfo.Rainbow then
+											if v.r then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										elseif SellPetInfo.Golden then
+											if v.g then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										else
+											if not v.dm and not v.r and not v.g then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										end
+									end
+								else
+									if not (v.sh == true) then
+										if SellPetInfo.DarkMatter then
+											if v.dm then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										elseif SellPetInfo.Rainbow then
+											if v.r then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										elseif SellPetInfo.Golden then
+											if v.g then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										else
+											if not v.dm and not v.r and not v.g then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										end
+									end
+								end
+							end
+						else
+							if not v.hc then
+								if SellPetInfo.Shiny then
+									if v.sh == true then
+										if SellPetInfo.DarkMatter then
+											if v.dm then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										elseif SellPetInfo.Rainbow then
+											if v.r then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										elseif SellPetInfo.Golden then
+											if v.g then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										else
+											if not v.dm and not v.r and not v.g then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										end
+									end
+								else
+									if not (v.sh == true) then
+										if SellPetInfo.DarkMatter then
+											if v.dm then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										elseif SellPetInfo.Rainbow then
+											if v.r then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										elseif SellPetInfo.Golden then
+											if v.g then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										else
+											if not v.dm and not v.r and not v.g then
+												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+											end
+										end
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+			print("Invoking")
+			Invoke("Add Trading Booth Pet", NeedPets)
+		end
+		local MyBooth = nil
+
+		for i, v in pairs(workspace["__MAP"].Interactive.Booths:GetChildren()) do
+			if v.Booth:FindFirstChild("YourBoothAttachment") then
+				MyBooth = v
+			end
+		end
+
+		if not (MyBooth == nil) then
+			while selling do
+				MyPetsCount = 0
+				for i, v in pairs(MyBooth.Pets.SurfaceGui.PetScroll:GetChildren()) do
+					if v:IsA("Frame") and not (v.Name == "PetHolder") then
+						MyPetsCount+=1
+					end
+				end
+				if MyPetsCount < BoothPetsAmount and selling then
+					AddPets()
+				end
+				wait(1)
+			end
+		else
+			for i = 1,50 do
+				Invoke("Claim Trading Booth", i)
+				wait()
+			end
+			return StartSelling()
+		end
+	end
+	
+	Section:NewToggle("Auto Sell pets", "Click to start put your pets on your booth", function(state)
+		if state then
+			selling = true
+			spawn(StartSelling)
+		else
+			selling = false
+		end
+	end)
 
 	local Tab = Window:NewTab("Save/Load")
 	local Section = Tab:NewSection("Save/Load")
@@ -1678,7 +1895,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 then
 		end
 		SaveSettings()
 	end)
-
+	
 	local Tab = Window:NewTab("GUI")
 	local Section = Tab:NewSection("GUI")
 	Section:NewKeybind("Hide GUI", "Hide GUI", Enum.KeyCode.F, function()
