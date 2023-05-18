@@ -1643,21 +1643,24 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 
 	local Tab = Window:NewTab("Trading Plaza")
 	local Section = Tab:NewSection("Booth")
-	local DetailPetsTypes1 = {}
-	local DetailPetsTypes2 = {}
+	local PetIds1 = {}
+	local PetIds2 = {}
 	local SellPetInfo = {}
+	local SellHardcore, SellShiny, SellDM, SellRainbow, SellGolden = false, false, false, false, false
+	local SellPetID = 0
+	
 	local BoothPetSelection = Section:NewDropdown("Select a pet to sell", "Select a pet to sell on booth", {}, function(currentOption)
-		for i,v in DetailPetsTypes1 do
+		for i,v in PetIds1 do
 			if v == currentOption then
-				SellPetInfo = DetailPetsTypes2[i]
+				SellPetID = PetIds2[i]
 			end
 		end
 	end)
 
 	local function UpdatePetsTypes()
 		local PetsTypes = {}
-		DetailPetsTypes1 = {}
-		DetailPetsTypes2 = {}
+		PetIds1 = {}
+		PetIds2 = {}
 		for _,v in Pets do
 			if v.nk then
 				local PetInfo = {
@@ -1678,25 +1681,11 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 						end
 					end
 				end
-				local pi = ""
-				if PetInfo.Hardcore then
-					pi = "HC "
-				end
-				if PetInfo.Shiny then
-					pi = pi.."Shiny "
-				end
-				if PetInfo.Golden then
-					pi = pi.."Golden "
-				elseif PetInfo.Rainbow then
-					pi = pi.."Rainbow "
-				elseif PetInfo.DarkMatter then
-					pi = pi.."DM "
-				end
-				pi = pi..PetInfo.Name
+				local pi = PetInfo.Name
 				if not table.find(PetsTypes, pi) then
 					table.insert(PetsTypes, pi)
-					table.insert(DetailPetsTypes1, pi)
-					table.insert(DetailPetsTypes2, PetInfo)
+					table.insert(PetIds1, pi)
+					table.insert(PetIds2, PetInfo.ID)
 				end
 			end
 		end
@@ -1707,6 +1696,43 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 	Section:NewButton("Update Dropdown Below", "Update Pets selection to sell", function()
 		UpdatePetsTypes()
 	end)
+	
+	Section:NewToggle("Hardcore", "Click to use Hardcore pets", function(state)
+		if state then
+			SellHardcore = true
+		else
+			SellHardcore = false
+		end
+	end)
+	Section:NewToggle("Shiny", "Click to use Shiny pets", function(state)
+		if state then
+			SellShiny = true
+		else
+			SellShiny = false
+		end
+	end)
+	Section:NewToggle("Dark Matter", "Click to use Dark Matter pets", function(state)
+		if state then
+			SellDM = true
+		else
+			SellDM = false
+		end
+	end)
+	Section:NewToggle("Rainbow", "Click to use Rainbow pets", function(state)
+		if state then
+			SellRainbow = true
+		else
+			SellRainbow = false
+		end
+	end)
+	Section:NewToggle("Golden", "Click to use Golden pets", function(state)
+		if state then
+			SellGolden = true
+		else
+			SellGolden = false
+		end
+	end)
+	
 	local BoothPetsAmount = 12
 	local BoothPetsPrice = 10000000000000
 	Section:NewSlider("Amount", "Amount to put on the stand", 12, 1, function(s)
@@ -1723,6 +1749,14 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 		local function AddPets()
 			local NeedPets = {}
 			local BoothPets = {}
+			SellPetInfo = {
+				Golden = SellGolden,
+				Rainbow = SellRainbow,
+				DarkMatter = SellDM,
+				Shiny = SellShiny,
+				Hardcore = SellHardcore,
+				ID = SellPetID,
+			}
 			for i, v in pairs(MyBooth.Pets.SurfaceGui.PetScroll:GetChildren()) do
 				if v:IsA("Frame") and not (v.Name == "PetHolder") then
 					table.insert(BoothPets, v.Name)
@@ -1856,7 +1890,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 		else
 			for i = 1,50 do
 				Invoke("Claim Trading Booth", i)
-				wait()
+				wait(1)
 			end
 			return StartSelling()
 		end
