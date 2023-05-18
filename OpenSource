@@ -1620,18 +1620,18 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 			renaming = false
 		end
 	end)
-	
+
 	Section:NewLabel("Boosts")
 	local BAmount = 1
 	local SBoost = "Triple Coins"
 	Section:NewSlider("Amount to use", "Amount of boosts to use per once", 1000, 0, function(s)
 		BAmount = s
 	end)
-	
+
 	Section:NewDropdown("Select a boost", "Select a boost to use", {"Triple Coins", "Triple Damage", "Super Lucky", "Ultra Lucky"}, function(currentOption)
 		SBoost = currentOption
 	end)
-	
+
 	Section:NewButton("Use Boosts", "Click to use boosts", function()
 		for i = 1,BAmount do
 			spawn(function()
@@ -1640,7 +1640,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 		end
 	end)
 
-	
+
 	local Tab = Window:NewTab("Trading Plaza")
 	local Section = Tab:NewSection("Booth")
 	local DetailPetsTypes1 = {}
@@ -1653,7 +1653,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 			end
 		end
 	end)
-	
+
 	local function UpdatePetsTypes()
 		local PetsTypes = {}
 		DetailPetsTypes1 = {}
@@ -1703,7 +1703,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 		BoothPetSelection:Refresh(PetsTypes)
 	end
 	UpdatePetsTypes()
-	
+
 	Section:NewButton("Update Dropdown Below", "Update Pets selection to sell", function()
 		UpdatePetsTypes()
 	end)
@@ -1719,94 +1719,109 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 	local selling = false
 	local function StartSelling()
 		local MyPetsCount = 0
+		local MyBooth = nil
 		local function AddPets()
 			local NeedPets = {}
+			local BoothPets = {}
+			for i, v in pairs(MyBooth.Pets.SurfaceGui.PetScroll:GetChildren()) do
+				if v:IsA("Frame") and not (v.Name == "PetHolder") then
+					table.insert(BoothPets, v.Name)
+				end
+			end
 			for i, v in Pets do
 				if #NeedPets+MyPetsCount < BoothPetsAmount then
-					if v.id == SellPetInfo.ID then
-						if SellPetInfo.Hardcore then
-							if v.hc == true then
-								if SellPetInfo.Shiny then
-									if v.sh == true then
-										if SellPetInfo.DarkMatter then
-											if v.dm then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										elseif SellPetInfo.Rainbow then
-											if v.r then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										elseif SellPetInfo.Golden then
-											if v.g then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										else
-											if not v.dm and not v.r and not v.g then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+					local IsBPet = false
+					for _,vv in BoothPets do
+						if vv == v.uid then
+							IsBPet = true
+						end
+					end
+					if not IsBPet then
+						if v.id == SellPetInfo.ID then
+							if SellPetInfo.Hardcore then
+								if v.hc == true then
+									if SellPetInfo.Shiny then
+										if v.sh == true then
+											if SellPetInfo.DarkMatter then
+												if v.dm then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											elseif SellPetInfo.Rainbow then
+												if v.r then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											elseif SellPetInfo.Golden then
+												if v.g then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											else
+												if not v.dm and not v.r and not v.g then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
 											end
 										end
-									end
-								else
-									if not (v.sh == true) then
-										if SellPetInfo.DarkMatter then
-											if v.dm then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										elseif SellPetInfo.Rainbow then
-											if v.r then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										elseif SellPetInfo.Golden then
-											if v.g then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										else
-											if not v.dm and not v.r and not v.g then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+									else
+										if not (v.sh == true) then
+											if SellPetInfo.DarkMatter then
+												if v.dm then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											elseif SellPetInfo.Rainbow then
+												if v.r then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											elseif SellPetInfo.Golden then
+												if v.g then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											else
+												if not v.dm and not v.r and not v.g then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
 											end
 										end
 									end
 								end
-							end
-						else
-							if not v.hc then
-								if SellPetInfo.Shiny then
-									if v.sh == true then
-										if SellPetInfo.DarkMatter then
-											if v.dm then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										elseif SellPetInfo.Rainbow then
-											if v.r then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										elseif SellPetInfo.Golden then
-											if v.g then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										else
-											if not v.dm and not v.r and not v.g then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+							else
+								if not v.hc then
+									if SellPetInfo.Shiny then
+										if v.sh == true then
+											if SellPetInfo.DarkMatter then
+												if v.dm then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											elseif SellPetInfo.Rainbow then
+												if v.r then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											elseif SellPetInfo.Golden then
+												if v.g then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											else
+												if not v.dm and not v.r and not v.g then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
 											end
 										end
-									end
-								else
-									if not (v.sh == true) then
-										if SellPetInfo.DarkMatter then
-											if v.dm then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										elseif SellPetInfo.Rainbow then
-											if v.r then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										elseif SellPetInfo.Golden then
-											if v.g then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
-											end
-										else
-											if not v.dm and not v.r and not v.g then
-												table.insert(NeedPets, {v.uid, BoothPetsPrice})
+									else
+										if not (v.sh == true) then
+											if SellPetInfo.DarkMatter then
+												if v.dm then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											elseif SellPetInfo.Rainbow then
+												if v.r then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											elseif SellPetInfo.Golden then
+												if v.g then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
+											else
+												if not v.dm and not v.r and not v.g then
+													table.insert(NeedPets, {v.uid, BoothPetsPrice})
+												end
 											end
 										end
 									end
@@ -1818,7 +1833,6 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 			end
 			Invoke("Add Trading Booth Pet", NeedPets)
 		end
-		local MyBooth = nil
 
 		for i, v in pairs(workspace["__MAP"].Interactive.Booths:GetChildren()) do
 			if v.Booth:FindFirstChild("YourBoothAttachment") then
@@ -1847,7 +1861,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 			return StartSelling()
 		end
 	end
-	
+
 	Section:NewToggle("Auto Sell pets", "Click to start put your pets on your booth", function(state)
 		if state then
 			selling = true
@@ -1914,7 +1928,7 @@ if game.PlaceId == 6284583030 or game.PlaceId == 10321372166 or game.PlaceId == 
 		end
 		SaveSettings()
 	end)
-	
+
 	local Tab = Window:NewTab("GUI")
 	local Section = Tab:NewSection("GUI")
 	Section:NewKeybind("Hide GUI", "Hide GUI", Enum.KeyCode.F, function()
